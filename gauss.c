@@ -2,16 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_SIGNIFICANT_FIGURES 3
+
 int n;
 double **matrix;
 double *solution;
+
+int significantFigures(double x) {
+  double multiplier = 1.0;
+  for (int i = 0; i < MAX_SIGNIFICANT_FIGURES; i++) {
+    if (fabs(fmod(x * multiplier, 1.0)) < 1e-5) {
+      return i;
+    }
+    multiplier *= 10.0;
+  }
+  return MAX_SIGNIFICANT_FIGURES;
+}
 
 void printMatrix() {
   puts("\\begin{equation*}");
   puts("\\begin{bmatrix}");
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n + 1; j++) {
-      printf("%.1f", matrix[i][j]);
+      printf("%.*f", significantFigures(matrix[i][j]), matrix[i][j]);
       if (j != n) {
         printf(" & ");
       }
@@ -58,7 +71,8 @@ void exchangeRows(int x, int y) {
 void subtractRows(int x, int y) {
   double factor = matrix[y][x] / matrix[x][x];
   puts("");
-  printf("By subtracting $%.1f R_%i$ from $R_%i$\n", factor, x + 1, y + 1);
+  printf("By subtracting $%.*f R_%i$ from $R_%i$\n", significantFigures(factor),
+         factor, x + 1, y + 1);
   puts("");
   for (int i = 0; i < n + 1; i++) {
     matrix[y][i] -= factor * matrix[x][i];
@@ -90,15 +104,17 @@ void backSubstitute() {
   puts("\\begin{equation*}");
   puts("\\begin{aligned}");
   for (int i = n - 1; i >= 0; i--) {
-    printf("x_%i &= \\frac{%.1f", i + 1, matrix[i][n]);
+    printf("x_%i &= \\frac{%.*f", i + 1, significantFigures(matrix[i][n]),
+           matrix[i][n]);
     double sum = matrix[i][n];
     for (int j = i + 1; j < n; j++) {
-      printf(" - %.1f x_%i", matrix[i][j], j + 1);
+      printf(" - %.*f x_%i", significantFigures(matrix[i][j]), matrix[i][j],
+             j + 1);
       sum -= matrix[i][j] * solution[j];
     }
-    printf("}{%.1f}", matrix[i][i]);
+    printf("}{%.*f}", significantFigures(matrix[i][i]), matrix[i][i]);
     solution[i] = sum / matrix[i][i];
-    printf(" = %.1f \\\\\n", solution[i]);
+    printf(" = %.*f \\\\\n", significantFigures(solution[i]), solution[i]);
   }
   puts("\\end{aligned}");
   puts("\\end{equation*}");
