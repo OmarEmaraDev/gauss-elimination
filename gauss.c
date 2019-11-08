@@ -1,15 +1,18 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#define SIZE 3
+int n;
+double **matrix;
+double *solution;
 
-void printMatrix(double matrix[SIZE][SIZE + 1]) {
+void printMatrix() {
   puts("\\begin{equation*}");
   puts("\\begin{bmatrix}");
-  for (int i = 0; i < SIZE; i++) {
-    for (int j = 0; j < SIZE + 1; j++) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n + 1; j++) {
       printf("%.1f", matrix[i][j]);
-      if (j != SIZE) {
+      if (j != n) {
         printf(" & ");
       }
     }
@@ -19,10 +22,10 @@ void printMatrix(double matrix[SIZE][SIZE + 1]) {
   puts("\\end{equation*}");
 }
 
-int columnArgMax(double matrix[SIZE][SIZE + 1], int x) {
+int columnArgMax(int x) {
   double max = fabs(matrix[0][x]);
   int argmax = 0;
-  for (int i = x; i < SIZE; i++) {
+  for (int i = x; i < n; i++) {
     if (fabs(matrix[i][x]) > max) {
       max = fabs(matrix[i][x]);
       argmax = i;
@@ -31,8 +34,8 @@ int columnArgMax(double matrix[SIZE][SIZE + 1], int x) {
   return argmax;
 }
 
-_Bool isSingular(double matrix[SIZE][SIZE + 1], int x) {
-  for (int i = x; i < SIZE; i++) {
+_Bool isSingular(int x) {
+  for (int i = x; i < n; i++) {
     if (matrix[x][i] != 0.0) {
       return 0;
     }
@@ -40,55 +43,56 @@ _Bool isSingular(double matrix[SIZE][SIZE + 1], int x) {
   return 1;
 }
 
-void exchangeRows(double matrix[SIZE][SIZE + 1], int x, int y) {
+void exchangeRows(int x, int y) {
   puts("");
   printf("By exchanging $R_%i$ and $R_%i$\n", x + 1, y + 1);
   puts("");
-  for (int i = 0; i < SIZE + 1; i++) {
+  for (int i = 0; i < n + 1; i++) {
     double tmp = matrix[x][i];
     matrix[x][i] = matrix[y][i];
     matrix[y][i] = tmp;
   }
-  printMatrix(matrix);
+  printMatrix();
 }
 
-void subtractRows(double matrix[SIZE][SIZE + 1], int x, int y) {
+void subtractRows(int x, int y) {
   double factor = matrix[y][x] / matrix[x][x];
   puts("");
   printf("By subtracting $%.1f R_%i$ from $R_%i$\n", factor, x + 1, y + 1);
   puts("");
-  for (int i = 0; i < SIZE + 1; i++) {
+  for (int i = 0; i < n + 1; i++) {
     matrix[y][i] -= factor * matrix[x][i];
   }
-  printMatrix(matrix);
+  printMatrix();
 }
 
-void elimnate(double matrix[SIZE][SIZE + 1]) {
-  for (int i = 0; i < SIZE - 1; i++) {
-    if (isSingular(matrix, i)) {
+void elimnate() {
+  for (int i = 0; i < n - 1; i++) {
+    if (isSingular(i)) {
       puts("No unique solution exists.");
       return;
     }
-    int argmax = columnArgMax(matrix, i);
+    int argmax = columnArgMax(i);
     if (argmax != i) {
-      exchangeRows(matrix, i, argmax);
+      exchangeRows(i, argmax);
     }
-    for (int j = i + 1; j < SIZE; j++) {
+    for (int j = i + 1; j < n; j++) {
       if (matrix[j][i] == 0) {
         continue;
       }
-      subtractRows(matrix, i, j);
+      subtractRows(i, j);
     }
   }
 }
 
-void backSubstitute(double matrix[SIZE][SIZE + 1], double solution[SIZE]) {
-  puts("\n\\begin{equation*}");
+void backSubstitute() {
+  puts("");
+  puts("\\begin{equation*}");
   puts("\\begin{aligned}");
-  for (int i = SIZE - 1; i >= 0; i--) {
-    printf("x_%i &= \\frac{%.1f", i + 1, matrix[i][SIZE]);
-    double sum = matrix[i][SIZE];
-    for (int j = i + 1; j < SIZE; j++) {
+  for (int i = n - 1; i >= 0; i--) {
+    printf("x_%i &= \\frac{%.1f", i + 1, matrix[i][n]);
+    double sum = matrix[i][n];
+    for (int j = i + 1; j < n; j++) {
       printf(" - %.1f x_%i", matrix[i][j], j + 1);
       sum -= matrix[i][j] * solution[j];
     }
@@ -100,20 +104,42 @@ void backSubstitute(double matrix[SIZE][SIZE + 1], double solution[SIZE]) {
   puts("\\end{equation*}");
 }
 
-void guass(double matrix[SIZE][SIZE + 1], double solution[SIZE]) {
-  elimnate(matrix);
-  if (matrix[SIZE - 1][SIZE - 1] == 0.0) {
+void guass() {
+  elimnate();
+  if (matrix[n - 1][n - 1] == 0.0) {
     puts("No unique solution exists.");
     return;
   }
-  puts("\nWe reached the echelon form. We start back substituting");
-  backSubstitute(matrix, solution);
+  puts("");
+  puts("We reached the echelon form. We start back substituting");
+  solution = (double *)malloc(n * sizeof(double));
+  backSubstitute();
+}
+
+void parseArgs(char **args) {
+  n = strtol(args[1], NULL, 10);
+  matrix = (double **)malloc(n * sizeof(double *));
+  for (int i = 0; i < n; i++) {
+    matrix[i] = (double *)malloc((n + 1) * sizeof(double));
+  }
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n + 1; j++) {
+      matrix[i][j] = strtod(args[2 + i * (n + 1) + j], NULL);
+    }
+  }
+}
+
+void clean() {
+  free(solution);
+  for (int i = 0; i < n; i++) {
+    free(matrix[i]);
+  }
+  free(matrix);
 }
 
 int main(int argc, char **args) {
-  double matrix[SIZE][SIZE + 1] = {{0, 8, 2, -7}, {3, 5, 2, 8}, {6, 2, 8, 26}};
-  printMatrix(matrix);
-  double solution[SIZE];
-  guass(matrix, solution);
+  parseArgs(args);
+  guass();
+  clean();
   return 0;
 }
