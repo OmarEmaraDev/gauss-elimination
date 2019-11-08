@@ -7,6 +7,7 @@
 int n;
 double **matrix;
 double *solution;
+_Bool singular = 0;
 
 int significantFigures(double x) {
   double multiplier = 1.0;
@@ -20,7 +21,6 @@ int significantFigures(double x) {
 }
 
 void printMatrix() {
-  puts("\\begin{equation*}");
   puts("\\begin{bmatrix}");
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n + 1; j++) {
@@ -32,7 +32,6 @@ void printMatrix() {
     puts(" \\\\");
   }
   puts("\\end{bmatrix}");
-  puts("\\end{equation*}");
 }
 
 int columnArgMax(int x) {
@@ -57,33 +56,35 @@ _Bool isSingular(int x) {
 }
 
 void exchangeRows(int x, int y) {
-  puts("");
-  printf("By exchanging $R_%i$ and $R_%i$\n", x + 1, y + 1);
-  puts("");
+  printf("R_%i &\\Longleftrightarrow R_%i\n", x + 1, y + 1);
+  puts("&&\\qquad");
   for (int i = 0; i < n + 1; i++) {
     double tmp = matrix[x][i];
     matrix[x][i] = matrix[y][i];
     matrix[y][i] = tmp;
   }
   printMatrix();
+  puts("\\\\");
 }
 
 void subtractRows(int x, int y) {
   double factor = matrix[y][x] / matrix[x][x];
-  puts("");
-  printf("By subtracting $%.*f R_%i$ from $R_%i$\n", significantFigures(factor),
-         factor, x + 1, y + 1);
-  puts("");
+  printf("R_%i &\\Longleftarrow R_%i - %.*f R_%i\n", y + 1, y + 1,
+         significantFigures(factor), factor, x + 1);
+  puts("&&\\qquad");
   for (int i = 0; i < n + 1; i++) {
     matrix[y][i] -= factor * matrix[x][i];
   }
   printMatrix();
+  puts("\\\\");
 }
 
 void elimnate() {
+  puts("\\begin{equation*}");
+  puts("\\begin{aligned}");
   for (int i = 0; i < n - 1; i++) {
     if (isSingular(i)) {
-      puts("No unique solution exists.");
+      singular = 1;
       return;
     }
     int argmax = columnArgMax(i);
@@ -97,6 +98,8 @@ void elimnate() {
       subtractRows(i, j);
     }
   }
+  puts("\\end{aligned}");
+  puts("\\end{equation*}");
 }
 
 void backSubstitute() {
@@ -122,12 +125,12 @@ void backSubstitute() {
 
 void guass() {
   elimnate();
-  if (matrix[n - 1][n - 1] == 0.0) {
+  if (matrix[n - 1][n - 1] == 0.0 || singular) {
     puts("No unique solution exists.");
     return;
   }
   puts("");
-  puts("We reached the echelon form. We start back substituting");
+  puts("We start back substituting.");
   solution = (double *)malloc(n * sizeof(double));
   backSubstitute();
 }
