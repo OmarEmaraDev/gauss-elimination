@@ -35,9 +35,9 @@ void printMatrix() {
 }
 
 int columnArgMax(int x) {
-  double max = fabs(matrix[0][x]);
-  int argmax = 0;
-  for (int i = x; i < n; i++) {
+  int argmax = x;
+  double max = matrix[x][x];
+  for (int i = x + 1; i < n; i++) {
     if (fabs(matrix[i][x]) > max) {
       max = fabs(matrix[i][x]);
       argmax = i;
